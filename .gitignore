@@ -9,7 +9,7 @@ dataset/ocr_training/
 # dataset/ocr_training/fonts/
 # dataset/ocr_training/font_pools/
 debug_crops/
-# *.pt
+*.pt
 *.onnx
 *.jpg
 weights/
