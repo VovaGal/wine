@@ -9,10 +9,9 @@ import cv2
 import easyocr
 import numpy as np
 import torch
+import torch.nn as nn
 from PIL import Image
 from torchvision import transforms
-
-from ocr_10_epoch import expand_parseq
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -27,6 +26,82 @@ DEFAULT_RECOGNITION_PASSES = 3
 
 # Reuse the heavy models for every request handled by one API worker.
 _MODEL_CACHE = {}
+
+
+def expand_parseq(model, charset, max_label_length, device):
+    """Rebuild PARSeq to match a saved custom checkpoint.
+
+    This intentionally lives in the inference runner instead of importing the
+    training script. Production inference can therefore load a checkpoint even
+    when ocr_10_epoch.py has been renamed, moved, or is not deployed.
+    """
+    old_tokenizer = model.tokenizer
+    tokenizer_class = type(old_tokenizer)
+    new_tokenizer = tokenizer_class(charset)
+
+    old_embed = model.model.text_embed.embedding
+    old_head = model.model.head
+    old_pos = model.model.pos_queries
+    max_label_length = int(max_label_length)
+
+    new_embed = nn.Embedding(
+        len(new_tokenizer),
+        old_embed.embedding_dim,
+        device=device,
+        dtype=old_embed.weight.dtype,
+    )
+    nn.init.normal_(new_embed.weight, std=0.02)
+    for token, new_id in new_tokenizer._stoi.items():
+        old_id = old_tokenizer._stoi.get(token)
+        if old_id is not None and old_id < old_embed.num_embeddings:
+            new_embed.weight.data[new_id].copy_(old_embed.weight.data[old_id])
+
+    # The classifier predicts EOS plus charset symbols. BOS and PAD occupy the
+    # final two tokenizer IDs and are not classifier outputs.
+    new_head = nn.Linear(
+        old_head.in_features,
+        len(new_tokenizer) - 2,
+        device=device,
+        dtype=old_head.weight.dtype,
+    )
+    nn.init.normal_(new_head.weight, std=0.02)
+    nn.init.zeros_(new_head.bias)
+    for token, new_id in new_tokenizer._stoi.items():
+        if new_id in (new_tokenizer.bos_id, new_tokenizer.pad_id):
+            continue
+        old_id = old_tokenizer._stoi.get(token)
+        if old_id is not None and old_id < old_head.out_features:
+            new_head.weight.data[new_id].copy_(old_head.weight.data[old_id])
+            if old_head.bias is not None:
+                new_head.bias.data[new_id].copy_(old_head.bias.data[old_id])
+
+    new_pos = nn.Parameter(torch.empty(
+        1,
+        max_label_length + 1,
+        old_pos.shape[-1],
+        device=device,
+        dtype=old_pos.dtype,
+    ))
+    nn.init.trunc_normal_(new_pos, std=0.02)
+    keep = min(old_pos.shape[1], new_pos.shape[1])
+    new_pos.data[:, :keep].copy_(old_pos.data[:, :keep])
+
+    model.model.text_embed.embedding = new_embed
+    model.model.head = new_head
+    model.model.pos_queries = new_pos
+    model.model.max_label_length = max_label_length
+    model.tokenizer = new_tokenizer
+    model.bos_id = new_tokenizer.bos_id
+    model.eos_id = new_tokenizer.eos_id
+    model.pad_id = new_tokenizer.pad_id
+
+    if hasattr(model, "hparams"):
+        try:
+            model.hparams.max_label_length = max_label_length
+            model.hparams.charset_train = charset
+            model.hparams.charset_test = charset
+        except Exception:
+            pass
 
 
 def order_quad(points):
@@ -604,7 +679,6 @@ if __name__ == "__main__":
             craft_canvas_size=arguments.craft_canvas_size,
             recognition_passes=arguments.recognition_passes,
         )
-
 
 ## execution tags
 # --save-debug-crops                    # check the text boxes detected
