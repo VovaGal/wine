@@ -605,7 +605,8 @@ if __name__ == "__main__":
             recognition_passes=arguments.recognition_passes,
         )
 
-# --save-debug-crops
-# frozen_rose.jpg chianti.jpg alvarinho.jpg
-# --recognition-passes 1
-# --folder ".\dataset\ilya_cropped\"
+
+## execution tags
+# --save-debug-crops                    # check the text boxes detected
+# --recognition-passes 1                # 1 max speed, 3 max accuracy
+# --folder ".\dataset\ilya_cropped\"    # run through the folder
