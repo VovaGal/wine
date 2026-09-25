@@ -1,0 +1,11 @@
+# Python 3.11 inference dependencies. Install the paired torch wheels for your
+# target CUDA/CPU platform first (see README.md), then install this file.
+# These are runtime dependencies only; training and font generation are excluded.
+torch==2.5.1
+torchvision==0.20.1
+easyocr==1.7.2
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+Pillow==10.4.0
+timm==0.9.16
+pytorch-lightning==2.2.5
