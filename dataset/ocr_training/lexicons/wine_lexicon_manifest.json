@@ -1,0 +1,76 @@
+{
+  "source": "F:\\Projects\\Hackathons\\wine\\dataset\\wines_metadata.json",
+  "wine_records": 2041,
+  "max_line_length": 32,
+  "unicode_normalization": "NFC",
+  "uppercase_variants": true,
+  "counts": {
+    "latin": 1058,
+    "cyrillic": 2594,
+    "mixed": 539,
+    "numeric": 73,
+    "alphabetic": 4191,
+    "all": 4264
+  },
+  "files": {
+    "latin": "wine_lexicon_latin.txt",
+    "cyrillic": "wine_lexicon_cyrillic.txt",
+    "mixed": "wine_lexicon_mixed.txt",
+    "numeric": "wine_lexicon_numeric.txt",
+    "alphabetic": "wine_lexicon_alphabetic.txt",
+    "all": "wine_lexicon_all.txt"
+  },
+  "recommended_sampling": {
+    "latin": 0.4,
+    "cyrillic": 0.4,
+    "mixed": 0.1,
+    "numeric": 0.1
+  },
+  "notes": [
+    "All files are deduplicated; balance by sampling pools, not by repeating lines.",
+    "Use per-script pools with fonts that passed the matching coverage audit.",
+    "Do not use the lexicon to silently overwrite raw OCR at inference time."
+  ],
+  "candidate_counts_before_deduplication": {
+    "alcohol": {
+      "numeric": 2037
+    },
+    "category": {
+      "cyrillic": 6122
+    },
+    "curated_cyrillic": {
+      "cyrillic": 20
+    },
+    "curated_latin": {
+      "latin": 79
+    },
+    "curated_numeric": {
+      "numeric": 17
+    },
+    "derived_name": {
+      "cyrillic": 46,
+      "latin": 9,
+      "mixed": 2
+    },
+    "grape": {
+      "cyrillic": 2678
+    },
+    "name": {
+      "cyrillic": 1652,
+      "latin": 469,
+      "numeric": 7,
+      "mixed": 275
+    },
+    "producer": {
+      "cyrillic": 4178,
+      "latin": 1989,
+      "mixed": 36
+    },
+    "region": {
+      "cyrillic": 6122
+    },
+    "vintage": {
+      "numeric": 48
+    }
+  }
+}
