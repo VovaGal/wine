@@ -12,6 +12,7 @@ import torch
 import torch.nn as nn
 from PIL import Image
 from torchvision import transforms
+from wine_matcher import WineMatcher
 
 
 ssl._create_default_https_context = ssl._create_unverified_context
@@ -26,6 +27,7 @@ DEFAULT_RECOGNITION_PASSES = 3
 
 # Reuse the heavy models for every request handled by one API worker.
 _MODEL_CACHE = {}
+_MATCHER_CACHE = {}
 
 
 def expand_parseq(model, charset, max_label_length, device):
@@ -247,14 +249,13 @@ def token_confidences(confidence):
 
 
 def uses_allowed_script(text, allow_multilingual=False):
-    if allow_multilingual:
-        return True
     for char in text:
-        if char.isascii():
+        if char.isascii() or unicodedata.category(char).startswith(("P", "Z", "M")):
             continue
-        # Permit common typographic punctuation, but not letters from a script
-        # that the English detector was not configured to find.
-        if unicodedata.category(char).startswith(("P", "Z")):
+        script_name = unicodedata.name(char, "")
+        if "LATIN" in script_name:
+            continue
+        if allow_multilingual and "CYRILLIC" in script_name:
             continue
         return False
     return True
@@ -433,15 +434,39 @@ def initialize_pipeline(
     return parseq_model, detector, device, load_time, False
 
 
+def initialize_matcher(catalog_path="dataset/wine_catalog.jsonl"):
+    """Keep the catalog index resident; rebuild it if the file changes."""
+    path = Path(catalog_path).expanduser().resolve()
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"Wine catalog not found: {path}. Generate it with "
+            "build_wine_catalog.py or pass --catalog PATH."
+        )
+    cache_key = (path, path.stat().st_mtime_ns)
+    if cache_key in _MATCHER_CACHE:
+        return _MATCHER_CACHE[cache_key], 0.0, True
+
+    started = time.perf_counter()
+    matcher = WineMatcher(path)
+    load_time = time.perf_counter() - started
+    _MATCHER_CACHE.clear()
+    _MATCHER_CACHE[cache_key] = matcher
+    return matcher, load_time, False
+
+
 def main(
     image_path,
-    allow_multilingual=False,
+    allow_multilingual=True,
     save_debug=False,
     checkpoint_path="weights/parseq_wine_best.pt",
     craft_canvas_size=DEFAULT_CRAFT_CANVAS_SIZE,
     recognition_passes=DEFAULT_RECOGNITION_PASSES,
+    catalog_path="dataset/wine_catalog.jsonl",
 ):
+    """Run OCR + catalog matching and return a backend-ready result dict."""
+    matcher, catalog_load_time, catalog_cache_hit = initialize_matcher(catalog_path)
     requested_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"\n[*] Image: {image_path}")
     print(f"[*] Hardware selected: {requested_device.type.upper()}")
 
     parseq_model, detector, device, load_time, cache_hit = initialize_pipeline(
@@ -449,6 +474,8 @@ def main(
     )
     if cache_hit:
         print("[*] Reusing resident OCR models.")
+    if not catalog_cache_hit:
+        print(f"[*] Loaded catalog index ({len(matcher.products):,} wines).")
 
     detect_started = time.perf_counter()
     image = cv2.imread(image_path)
@@ -478,7 +505,6 @@ def main(
 
     if not quads:
         print("[-] No text detected.")
-        return []
 
     debug_dir = Path("debug_crops")
     if save_debug:
@@ -566,7 +592,15 @@ def main(
             best_by_text[key] = record
     accepted_predictions = sorted(best_by_text.values(), key=lambda item: item[4])
     extracted_texts = [record[0] for record in accepted_predictions]
+    ocr_lines = [
+        {"text": record[0], "confidence": record[1]}
+        for record in accepted_predictions
+    ]
     recognize_time = time.perf_counter() - recognize_started
+
+    match_started = time.perf_counter()
+    result = matcher.match(ocr_lines, top_k=5)
+    match_time = time.perf_counter() - match_started
 
     for text, mean_conf, min_conf, lower_quartile, _ in rejected_predictions:
         print(
@@ -581,19 +615,48 @@ def main(
         print(f"-> {text}")
 
     print("\n" + "=" * 50)
+    print(f"WINE CATALOG MATCH: {result['status'].upper()}")
+    print("=" * 50)
+    if result["candidates"]:
+        for rank, candidate in enumerate(result["candidates"], 1):
+            producer = f" — {candidate['producer']}" if candidate["producer"] else ""
+            print(
+                f"{rank}. {candidate['name']}{producer} "
+                f"| match score {candidate['match_score']:.4f} "
+                f"| ID {candidate['wine_id']}"
+            )
+    else:
+        print(result.get("rejection_reason", "No catalog candidates found."))
+    print("Match scores rank candidates; they are not calibrated probabilities.")
+
+    print("\n" + "=" * 50)
     print(" PIPELINE TIMING METRICS:")
     print("=" * 50)
     cache_note = " (cached)" if cache_hit else " (one-time worker startup)"
     print(f"Model Loading: {load_time:.3f} seconds{cache_note}")
+    print(
+        f"Catalog Loading: {catalog_load_time:.3f} seconds"
+        f"{' (cached)' if catalog_cache_hit else ' (one-time worker startup)'}"
+    )
     print(f"CRAFT Detect:  {detect_time:.3f} seconds")
     print(
         f"PARSeq OCR:    {recognize_time:.3f} seconds "
         f"({len(extracted_texts)} accepted / {len(detected_crop_indices)} crops, "
         f"{recognition_passes} pass{'es' if recognition_passes != 1 else ''})"
     )
-    print(f"Total API Run: {(detect_time + recognize_time):.3f} seconds")
+    print(f"Catalog Match: {match_time:.3f} seconds")
+    print(f"Total API Run: {(detect_time + recognize_time + match_time):.3f} seconds")
     print("=" * 50)
-    return extracted_texts
+    result["image_path"] = str(image_path)
+    result["timing_seconds"] = {
+        "model_loading": round(load_time, 4),
+        "catalog_loading": round(catalog_load_time, 4),
+        "craft_detect": round(detect_time, 4),
+        "parseq_ocr": round(recognize_time, 4),
+        "catalog_match": round(match_time, 4),
+        "request_total": round(detect_time + recognize_time + match_time, 4),
+    }
+    return result
 
 
 def parse_arguments():
@@ -607,12 +670,18 @@ def parse_arguments():
     parser.add_argument(
         "--folder",
         type=Path,
-        help="Process every .jpg/.jpeg file directly inside this folder.",
+        help="Process every .jpg/.jpeg/.png file directly inside this folder.",
     )
     parser.add_argument(
         "--checkpoint",
         default="weights/parseq_wine_best.pt",
         help="Path to the trained PARSeq checkpoint.",
+    )
+    parser.add_argument(
+        "--catalog",
+        type=Path,
+        default=Path("dataset/wine_catalog.jsonl"),
+        help="Catalog JSONL generated by build_wine_catalog.py.",
     )
     parser.add_argument(
         "--craft-canvas-size",
@@ -630,7 +699,14 @@ def parse_arguments():
     parser.add_argument(
         "--allow-multilingual",
         action="store_true",
-        help="Allow non-ASCII scripts in recognized output.",
+        default=True,
+        help="Accept Latin and Cyrillic text (already the default).",
+    )
+    parser.add_argument(
+        "--latin-only",
+        dest="allow_multilingual",
+        action="store_false",
+        help="Reject Cyrillic predictions; accented Latin remains supported.",
     )
     parser.add_argument(
         "--save-debug-crops",
@@ -649,7 +725,7 @@ def collect_image_paths(images, folder=None):
             sorted(
                 path
                 for path in folder.iterdir()
-                if path.is_file() and path.suffix.casefold() in {".jpg", ".jpeg"}
+                if path.is_file() and path.suffix.casefold() in {".jpg", ".jpeg", ".png"}
             )
         )
     if not paths:
@@ -678,6 +754,7 @@ if __name__ == "__main__":
             checkpoint_path=arguments.checkpoint,
             craft_canvas_size=arguments.craft_canvas_size,
             recognition_passes=arguments.recognition_passes,
+            catalog_path=arguments.catalog,
         )
 
 ## execution tags

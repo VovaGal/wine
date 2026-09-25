@@ -1,0 +1,348 @@
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> TÊTE
+-> DE
+-> CHEVAL
+-> METHODE CLASSIQUE
+-> Sweet
+
+==================================================
+WINE CATALOG MATCH: MATCHED
+==================================================
+1. Tête de Cheval сладкое — Golubitskoe Estate | match score 0.5828 | ID 1220
+2. Tête de Cheval сладкое розе — Golubitskoe Estate | match score 0.4737 | ID 1214
+3. Tête de Cheval брют — Golubitskoe Estate | match score 0.4296 | ID 1219
+4. Tête de Cheval брют — Golubitskoe Estate | match score 0.4296 | ID 1599
+5. Tête de Chevall розе — Golubitskoe Estate | match score 0.4069 | ID 1600
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 6.435 seconds (one-time worker startup)
+Catalog Loading: 0.624 seconds (one-time worker startup)
+CRAFT Detect:  0.114 seconds
+PARSeq OCR:    0.061 seconds (5 accepted / 5 crops, 3 passes)
+Catalog Match: 0.199 seconds
+Total API Run: 0.374 seconds
+==================================================
+
+[*] Image: dataset\test\10.jpg
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> ВЕДЕРНИКОВЪ
+-> РЕЗЕРВ
+-> ЦИМЛЯНСКИЙ ЧЕРНЫЙ
+-> СИБИРЬКОВЫЙ
+-> ЭКСТРА БРЮТ
+-> ДОЛИНА ДОНА
+
+==================================================
+WINE CATALOG MATCH: UNRESOLVED
+==================================================
+No sufficiently supported product match in this catalog; check whether the label's wine is present.
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.082 seconds
+PARSeq OCR:    0.061 seconds (6 accepted / 6 crops, 3 passes)
+Catalog Match: 0.443 seconds
+Total API Run: 0.587 seconds
+==================================================
+
+[*] Image: dataset\test\2.jpeg
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> МЫСХАКО
+-> ОРАНЖЕВОЕ ИЗ БЕЛОГО
+-> ГЕВЮРЦТРАМИНЕР
+-> Anc 14 24 vol
+-> SENOL
+-> СУХОЕ
+
+==================================================
+WINE CATALOG MATCH: MATCHED
+==================================================
+1. Оранжевое из Белого — Мысхако | match score 0.8547 | ID 1957
+2. Гевюрцтраминер — ESSE | match score 0.4160 | ID 1778
+3. Гевюрцтраминер Mode Петнат — Мысхако | match score 0.1979 | ID 1963
+4. Гевюрцтраминер - Мускат — Uppa Winery | match score 0.1768 | ID 1284
+5. Гевюрцтраминер Кюве брют — Мысхако | match score 0.1582 | ID 2005
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.136 seconds
+PARSeq OCR:    0.064 seconds (6 accepted / 6 crops, 3 passes)
+Catalog Match: 0.222 seconds
+Total API Run: 0.422 seconds
+==================================================
+
+[*] Image: dataset\test\3.jpg
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> WHITE BLEND
+-> 1 L
+-> DOMAINE LIPKO
+-> PANODY VINEYARDE WINERY
+-> SEVASTOPOL
+-> 2023
+
+==================================================
+WINE CATALOG MATCH: AMBIGUOUS
+==================================================
+1. White Blend — Domaine Lipko | match score 0.8500 | ID 1289
+2. White Blend — Domaine Lipko | match score 0.8500 | ID 1640
+3. White Blend Lipko — Domaine Lipko | match score 0.6900 | ID 1642
+4. Riesling M Domaine Lipko — Domaine Lipko | match score 0.3084 | ID 1639
+5. Syrah Domaine Lipko — Domaine Lipko | match score 0.2895 | ID 1641
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.656 seconds
+PARSeq OCR:    0.083 seconds (6 accepted / 7 crops, 3 passes)
+Catalog Match: 0.352 seconds
+Total API Run: 1.091 seconds
+==================================================
+
+[*] Image: dataset\test\4.jpg
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> CANTIANI
+-> 110
+-> ALIGOTE
+-> RIESLING
+-> ЯТЬ
+
+==================================================
+WINE CATALOG MATCH: MATCHED
+==================================================
+1. Cantiani Aligote Riesling — Шато АЛВИСА | match score 0.7100 | ID 19
+2. Cantiani Riesling — Шато АЛВИСА | match score 0.5700 | ID 14
+3. Cantiani Riesling — Шато АЛВИСА | match score 0.5700 | ID 21
+4. Riesling — Ferrum Winery | match score 0.4300 | ID 1626
+5. Riesling — Oleg Repin | match score 0.4300 | ID 1918
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.077 seconds
+PARSeq OCR:    0.035 seconds (5 accepted / 5 crops, 3 passes)
+Catalog Match: 0.146 seconds
+Total API Run: 0.259 seconds
+==================================================
+
+[*] Image: dataset\test\5.jpg
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+[DEBUG] Blocked: '8' (mean=0.00, min=0.00, q25=0.00)
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> CANTIANI
+-> TRADITIONS
+-> RIESLING
+-> RKATSITELI
+-> А Сh
+-> MASTER
+-> OF
+-> WINE
+-> СЛАН
+
+==================================================
+WINE CATALOG MATCH: MATCHED
+==================================================
+1. Cantiani Riesling Rkatsiteli — Шато АЛВИСА | match score 0.5900 | ID 18
+2. Cantiani Riesling — Шато АЛВИСА | match score 0.4500 | ID 14
+3. Cantiani Rkatsiteli — Шато АЛВИСА | match score 0.4500 | ID 16
+4. Cantiani Rkatsiteli — Шато АЛВИСА | match score 0.4500 | ID 20
+5. Cantiani Riesling — Шато АЛВИСА | match score 0.4500 | ID 21
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.583 seconds
+PARSeq OCR:    0.057 seconds (9 accepted / 11 crops, 3 passes)
+Catalog Match: 0.284 seconds
+Total API Run: 0.924 seconds
+==================================================
+
+[*] Image: dataset\test\6.jpg
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+[DEBUG] Blocked: 'РОССОРСНОЕ ВИН Э СЛАДКЕТ' (mean=0.94, min=0.36, q25=0.98)
+[DEBUG] Blocked: 'АРЕБАНЬ ГЕ БУРРИ' (mean=0.80, min=0.37, q25=0.71)
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> Château
+-> ТАМА
+-> ШАТО ТАМАНЬ
+-> No4
+-> ЭЛЛЕР-Т
+-> Р-ТУРГАУ
+-> ШАРДОНЕ
+-> УКАЗАН ЕМ
+-> сухое белое
+
+==================================================
+WINE CATALOG MATCH: UNRESOLVED
+==================================================
+No sufficiently supported product match in this catalog; check whether the label's wine is present.
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.060 seconds
+PARSeq OCR:    0.087 seconds (9 accepted / 11 crops, 3 passes)
+Catalog Match: 0.452 seconds
+Total API Run: 0.599 seconds
+==================================================
+
+[*] Image: dataset\test\7.jpeg
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+[DEBUG] Blocked: '20 8' (mean=0.85, min=0.56, q25=0.77)
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> NICA
+-> Babylon Feeling
+-> 2023
+-> CLASSIQUE
+-> МЕТНОДЕ
+-> 1870
+-> РУССКИЙ ВИНЫЙ 2ОМ
+-> АБРАУ-ДЮРСО
+-> VICTOR DRAVIGNY
+-> Винодед Порского Авора
+-> КРАСНОЕ
+-> ПОЛУСЛАДКОЕ
+-> 2018
+-> RECOMMEND RU
+
+==================================================
+WINE CATALOG MATCH: MATCHED
+==================================================
+1. Victor Dravigny. Красное полусладкое — Абрау-Дюрсо | match score 0.8900 | ID 763
+2. Victor Dravigny. Полусладкое — Абрау-Дюрсо | match score 0.7500 | ID 761
+3. Victor Dravigny. Полусухое — Абрау-Дюрсо | match score 0.4628 | ID 774
+4. Абрау-Дюрсо Victor Dravigny брют — Абрау-Дюрсо | match score 0.4616 | ID 113
+5. Полусладкое Красное — Усадьба Перовских | match score 0.3900 | ID 275
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.315 seconds
+PARSeq OCR:    0.093 seconds (14 accepted / 15 crops, 3 passes)
+Catalog Match: 0.739 seconds
+Total API Run: 1.147 seconds
+==================================================
+
+[*] Image: dataset\test\8.jpg
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> КАБЕРНЕ
+-> СОВИНЬОН
+-> 2023
+
+==================================================
+WINE CATALOG MATCH: UNRESOLVED
+==================================================
+No sufficiently supported product match in this catalog; check whether the label's wine is present.
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.076 seconds
+PARSeq OCR:    0.033 seconds (3 accepted / 3 crops, 3 passes)
+Catalog Match: 0.040 seconds
+Total API Run: 0.148 seconds
+==================================================
+
+[*] Image: dataset\test\9.png
+[*] Hardware selected: CUDA
+[*] Reusing resident OCR models.
+
+==================================================
+DETECTED TEXT LINES:
+==================================================
+-> Volvot Ose
+-> CRIA
+-> ОГРАДА
+-> FANAGO
+-> VELVET
+-> SEASON
+-> CABERNET
+-> Десертико
+-> ПОЗАНИЙ
+-> СБОР
+-> FANAGORIA
+-> VIVINO
+
+==================================================
+WINE CATALOG MATCH: UNRESOLVED
+==================================================
+No sufficiently supported product match in this catalog; check whether the label's wine is present.
+Match scores rank candidates; they are not calibrated probabilities.
+
+==================================================
+ PIPELINE TIMING METRICS:
+==================================================
+Model Loading: 0.000 seconds (cached)
+Catalog Loading: 0.000 seconds (cached)
+CRAFT Detect:  0.080 seconds
+PARSeq OCR:    0.060 seconds (12 accepted / 12 crops, 3 passes)
+Catalog Match: 0.707 seconds
+Total API Run: 0.847 seconds
+==================================================
