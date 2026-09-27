@@ -172,6 +172,11 @@ class WineMatcher:
                 self.products[wine_id] = product
         if not self.products:
             raise ValueError(f"Empty wine catalog: {self.catalog_path}")
+        self.producer_ids = {}
+        for wine_id, product in self.products.items():
+            key = search_key(product.get("producer"))
+            if key:
+                self.producer_ids.setdefault(key, []).append(wine_id)
 
         self.fields: dict[str, dict[str, tuple[str, ...]]] = {}
         self.alias_owners: dict[str, set[str]] = defaultdict(set)
@@ -437,6 +442,8 @@ class WineMatcher:
     def match(self, ocr_lines: Iterable[str | dict[str, Any]], top_k: int = 5) -> dict[str, Any]:
         if top_k < 1:
             raise ValueError("top_k must be positive")
+        # If its better to show the producer shows itself first, then this block should be replaced with the commented
+        # however that increase the total time by about 1s, 0.4s median - benchmarked.
         parsed = parse_ocr_lines(ocr_lines)
         source = [{"text": line.text, "confidence": line.confidence} for line in parsed]
         result = {
@@ -449,6 +456,50 @@ class WineMatcher:
         }
         if not parsed:
             return result
+
+        # parsed = parse_ocr_lines(ocr_lines)
+        # source = [
+        #     {"text": line.text, "confidence": line.confidence}
+        #     for line in parsed
+        # ]
+        
+        # result = {
+        #     "status": "unresolved",
+        #     "ocr_lines": source,
+        #     "best_match": None,
+        #     "alternatives": [],
+        #     "candidates": [],
+        #     "score_type": "uncalibrated_catalog_match_score",
+        #     "recognized_producer": None,
+        #     "producer_wines": [],
+        # }
+        
+        # if not parsed:
+        #     return result
+        
+        # producer_key = next(
+        #     (
+        #         key
+        #         for line in parsed
+        #         if line.confidence is None or line.confidence >= 0.80
+        #         for key in line.keys
+        #         if len(key) >= 5 and key in self.producer_ids
+        #     ),
+        #     None,
+        # )
+        
+        # if producer_key:
+        #     ids = self.producer_ids[producer_key]
+        #     result["recognized_producer"] = self.products[ids[0]]["producer"]
+        #     result["producer_wines"] = [
+        #         {
+        #             "wine_id": wine_id,
+        #             "name": self.products[wine_id]["name"],
+        #             "slug": self.products[wine_id].get("slug"),
+        #             "image_url": self.products[wine_id].get("image_url"),
+        #         }
+        #         for wine_id in ids
+        #     ]
 
         queries = query_lines(parsed)
         ids = self.retrieve(queries)

@@ -683,6 +683,10 @@ def main(
 
     match_started = time.perf_counter()
     result = matcher.match(ocr_lines, top_k=5)
+    print("[DEBUG] Recognized producer:", result.get("recognized_producer"))
+    # Enable this if the wine_inference has the producers first uncommented.
+    # print("[DEBUG] Other producer wines:",
+    #   [wine["name"] for wine in result.get("producer_wines", [])])
     match_time = time.perf_counter() - match_started
 
     for text, mean_conf, min_conf, lower_quartile, _ in rejected_predictions:

@@ -375,6 +375,86 @@ def remove_duplicate_boxes(quads, iou_threshold=0.65):
             kept.append(quad)
     return kept
 
+def joined_fragment_boxes(quads, max_extra=8):
+    """Generate extra crops for adjacent and overlapping text fragments."""
+    bounds = [quad_bounds(q) for q in quads]
+    proposals = []
+
+    for i, (x1, y1, x2, y2) in enumerate(bounds):
+        h1 = y2 - y1
+        if h1 <= 0:
+            continue
+
+        for j, (xx1, yy1, xx2, yy2) in enumerate(bounds):
+            if i == j:
+                continue
+
+            h2 = yy2 - yy1
+            if h2 <= 0:
+                continue
+
+            gap = xx1 - x2
+            overlap = max(0, min(y2, yy2) - max(y1, yy1))
+
+            if not (
+                -0.15 * min(h1, h2) <= gap <= 2.0 * max(h1, h2)
+                and overlap >= 0.45 * min(h1, h2)
+                and max(h1, h2) / min(h1, h2) <= 1.8
+            ):
+                continue
+
+            left, right = min(x1, xx1), max(x2, xx2)
+            if right - left > 12 * max(h1, h2):
+                continue
+
+            joined = horizontal_to_quad((
+                left, right, min(y1, yy1), max(y2, yy2)
+            ))
+            proposals.append((max(h1, h2), gap, joined))
+
+    proposals.sort(key=lambda item: (-item[0], item[1]))
+
+    pairs = []
+    pair_limit = max(1, max_extra - 2)
+    for _, _, quad in proposals:
+        if not any(box_iou(quad, existing) > 0.85 for existing in pairs):
+            pairs.append(quad)
+        if len(pairs) >= pair_limit:
+            break
+
+    result = list(pairs)
+
+    for a in range(len(pairs)):
+        for b in range(a + 1, len(pairs)):
+            ax1, ay1, ax2, ay2 = quad_bounds(pairs[a])
+            bx1, by1, bx2, by2 = quad_bounds(pairs[b])
+
+            staggered = (
+                ax1 < bx1 < ax2 < bx2
+                or bx1 < ax1 < bx2 < ax2
+            )
+            shared_x = max(0, min(ax2, bx2) - max(ax1, bx1))
+            shared_y = max(0, min(ay2, by2) - max(ay1, by1))
+
+            if not (
+                staggered
+                and shared_x >= 0.25 * min(ax2 - ax1, bx2 - bx1)
+                and shared_y >= 0.60 * min(ay2 - ay1, by2 - by1)
+            ):
+                continue
+
+            joined = horizontal_to_quad((
+                min(ax1, bx1), max(ax2, bx2),
+                min(ay1, by1), max(ay2, by2),
+            ))
+            if not any(box_iou(joined, existing) > 0.85 for existing in result):
+                result.append(joined)
+
+            if len(result) >= max_extra:
+                return result
+
+    return result
+
 
 def valid_geometry(quad, image_shape):
     """Reject tiny decorative fragments before asking the recognizer to read them."""
@@ -712,6 +792,12 @@ class WineInference:
         if not self.products:
             raise ValueError(f"Empty wine catalog: {self.catalog_path}")
 
+        self.producer_ids = {}
+        for wine_id, product in self.products.items():
+            key = search_key(product.get("producer"))
+            if key:
+                self.producer_ids.setdefault(key, []).append(wine_id)
+
         self.fields: dict[str, dict[str, tuple[str, ...]]] = {}
         self.alias_owners: dict[str, set[str]] = defaultdict(set)
         self.token_index: dict[str, set[str]] = defaultdict(set)
@@ -989,6 +1075,8 @@ class WineInference:
         if top_k < 1:
             raise ValueError("top_k must be positive")
         self._load_catalog()
+        # If its better to show the producer shows itself first, then this block should be replaced with the commented
+        # however that increase the total time by about 1s, 0.4s median - benchmarked
         parsed = parse_ocr_lines(ocr_lines)
         source = [{"text": line.text, "confidence": line.confidence} for line in parsed]
         result = {
@@ -1001,6 +1089,50 @@ class WineInference:
         }
         if not parsed:
             return result
+
+        # parsed = parse_ocr_lines(ocr_lines)
+        # source = [
+        #     {"text": line.text, "confidence": line.confidence}
+        #     for line in parsed
+        # ]
+        
+        # result = {
+        #     "status": "unresolved",
+        #     "ocr_lines": source,
+        #     "best_match": None,
+        #     "alternatives": [],
+        #     "candidates": [],
+        #     "score_type": "uncalibrated_catalog_match_score",
+        #     "recognized_producer": None,
+        #     "producer_wines": [],
+        # }
+        
+        # if not parsed:
+        #     return result
+        
+        # producer_key = next(
+        #     (
+        #         key
+        #         for line in parsed
+        #         if line.confidence is None or line.confidence >= 0.80
+        #         for key in line.keys
+        #         if len(key) >= 5 and key in self.producer_ids
+        #     ),
+        #     None,
+        # )
+        
+        # if producer_key:
+        #     ids = self.producer_ids[producer_key]
+        #     result["recognized_producer"] = self.products[ids[0]]["producer"]
+        #     result["producer_wines"] = [
+        #         {
+        #             "wine_id": wine_id,
+        #             "name": self.products[wine_id]["name"],
+        #             "slug": self.products[wine_id].get("slug"),
+        #             "image_url": self.products[wine_id].get("image_url"),
+        #         }
+        #         for wine_id in ids
+        #     ]
 
         queries = query_lines(parsed)
         ids = self.retrieve(queries)
@@ -1165,6 +1297,11 @@ class WineInference:
         quads = [quad for quad in quads if valid_geometry(quad, image_rgb.shape)]
         quads = remove_duplicate_boxes(quads)
         quads.sort(key=lambda quad: (quad_bounds(quad)[1], quad_bounds(quad)[0]))
+
+        original_crop_count = len(quads)
+        quads.extend(joined_fragment_boxes(quads))
+        joined_crop_count = len(quads) - original_crop_count
+
         detect_time = time.perf_counter() - detect_started
 
         debug_dir = Path(debug_dir)
@@ -1272,6 +1409,8 @@ class WineInference:
             for text, mean_conf, min_conf, q25, _ in rejected_predictions:
                 print(f"[DEBUG] Blocked: {text!r} (mean={mean_conf:.2f}, min={min_conf:.2f}, q25={q25:.2f})")
             print(f"CRAFT: {detect_time:.3f}s; PARSeq: {recognize_time:.3f}s; match: {match_time:.3f}s")
+            print(f"Joined crops: {joined_crop_count}; "
+                f"debug indices start at {original_crop_count:02d}")
 
         result["image_path"] = image_label
         result["timing_seconds"] = {
