@@ -18,8 +18,7 @@ import os
 import re
 import time
 import unicodedata
-from collections import Counter, defaultdict
-from collections import namedtuple
+from collections import Counter, defaultdict, namedtuple
 from difflib import SequenceMatcher
 from functools import lru_cache
 from pathlib import Path

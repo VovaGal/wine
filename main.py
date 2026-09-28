@@ -6,11 +6,10 @@ from pathlib import Path
 
 import aio_pika
 from aio_pika import DeliveryMode, Message
+from config import Config, config
 from loguru import logger
 from minio import Minio
 from pydantic import BaseModel, ValidationError
-
-from config import Config, config
 from wine_inference import WineInference
 
 
@@ -183,7 +182,12 @@ class WineRecognitionWorker:
                     top_k=self.settings.inference.top_k,
                 )
 
-                response = {"task_id": task.task_id, "result": result}
+                result = self._enrich_result(result)
+
+                response = {
+                    "task_id": task.task_id,
+                    "result": result,
+                }
                 logger.info("Request {} finished: status={}", task.task_id, result.get("status"))
 
             except Exception:
@@ -233,6 +237,49 @@ class WineRecognitionWorker:
         finally:
             if self.connection and not self.connection.is_closed:
                 await self.connection.close()
+
+    def _enrich_candidate(self, candidate: dict) -> dict:
+        wine_id = str(candidate["wine_id"])
+        product = self.worker.products.get(wine_id)
+
+        if product is None:
+            logger.warning(
+                "Wine {} from inference result is missing in catalog",
+                wine_id,
+            )
+            return candidate
+
+        metadata = {
+            key: value
+            for key, value in candidate.items()
+            if key not in product
+        }
+
+        return {
+            **product,
+            **metadata,
+        }
+
+
+    def _enrich_result(self, result: dict) -> dict:
+        enriched = dict(result)
+
+        if result.get("best_match") is not None:
+            enriched["best_match"] = self._enrich_candidate(
+                result["best_match"]
+            )
+
+        enriched["alternatives"] = [
+            self._enrich_candidate(candidate)
+            for candidate in result.get("alternatives", [])
+        ]
+
+        enriched["candidates"] = [
+            self._enrich_candidate(candidate)
+            for candidate in result.get("candidates", [])
+        ]
+
+        return enriched
 
 
 def main() -> None:
